@@ -1,0 +1,19 @@
+1. INTRODUCTION
+최근 개발되고 있는 고성능의 휴대용 전자기기에서 요구하는 DRAM의 용량/속도(Large-Capacity / High-Speed)가 높아지고 있는 추세이다. 하지만 휴대용 기기의 특성 상 사용되는 chip의 사이즈는 제한되어 있다. 때문에 한정된 사이즈의 PKG size에 큰 용량/높은 속도의 성능을 갖는 휴대용기기를 위한 DRAM을 개발이 되고 있다. 이런 고성능 DRAM의 개발은 높은 속도의 칩을 많이, 높게 쌓아 올리고 그 용량을 증가시키는 방향으로 진행된다.
+(그림1)
+현재 개발되는 고성능의 DRAM에 대비하여, Burn in Infra의 성능이 부족한 상황이다. 신규설비 도입에도 불구하고, 설비의 가용 용량의 부족으로 현재 개발되는 High-stacked DRAM의 Chip을 동시에 Test할 경우 양산 설비로 진행이 불가능하다. 이 논문에서는 향후 생산 될 High-stacked DRAM을 효율적으로 B/I 하는 방식을 제시한다. 현재 개발되는 Test Process를 기반으로 고성능 DRAM의 양산 효율성에 기여하고자 한다.
+2. PROBLEM RESERCH AND RESULTS
+2.1 제품 용량 증가에 따른 INFRA의 한계
+DRAM의 성능이 발전함과 동시에 제품의 초기 불량을 발현하고 Test하는 설비인 Burn in chamber의 Power 용량이 2.5배 개선되었다. Board에 Power를 공급하는 Source의 개수가 늘어나 Power Group의 세분화가 가능해지고, burn in test 시 허용 가능한 Current 용량이 커졌다. 실제로, 196Density 의 Board에서 8개의 Chip까지 동시에 Test 할 수 있는 수준까지 개선되었다. 
+
+하지만 DRAM의 속도의 향상과 한 제품에 쌓이는 chip의 단수의 증가로 Test 할 때 제품에서 발생하는 Current는 더 커지고 있는 추세이다. 현재 생산중인 32단 DRAM의 경우 동시에 Test하기 불가능한 수준이다. 앞으로 개발되는 고성능/고용량의 DRAM을 효율적으로 burn in test 하기에는 Chamber의 용량이 부족한 상황이다. Infrastructure를 교체하는 실제로 적용하기에 리스크가 있는 방법을 대신하여 DRAM 자체의 동작을 제한한 방식으로 Current를 제어하는 방식을 제안한다
+
+2.2 Active/Stby Mode 교차 Burn In.
+
+2.3 POWER SOURCE의 재배열.
+(그림x. BIB Source 구성)
+3. CONCLUSION
+High-performance Device를 위한 DRAM의 수요 증가와 고성능 DRAM이 개발되면서, 제품을 효율적으로 짧은 시간에 Burn in disturb 하기 위한 방법이 필요하다. 이는 Current 측면의 문제뿐만 아니라, 발열, Chamber 위치에 따른 열화 산포 등의 문제점 또한 해결되어야 한다. 현재 High-Stacked DRAM Burn in Process에서 발생하고 있는 Current 측면의 문제를 이 논문에서 제시했다. 고안한 방법을 토대로 앞으로 개발되는 고성능의 DRAM의 Burn in process의 효율을 증가시킬 수 있을 것이다.
+
+
+
