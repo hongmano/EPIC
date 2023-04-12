@@ -22,14 +22,38 @@ DRAM PKG 안에 다중으로 쌓인 chip들의 경우 CLK PIN을 통한 High and
 하지만 Burn in board와 설비에서 할당할 수 있는 CLK의 개수는 한정적이고 그 수는 고단으로 쌓은 제품의 chip을 각각 제어하기에 부족하다.
 그래서 일정 수의 chip을 하나의 CLK PIN에 할당하며 균등하게 나눠진 chip group을 제어할 수 있도록 인프라를 개발하고 있다.
 (그림)
-신규 설비인 DM1600C가 도입되면서
-(그림)
+기존 Burn in board에서 과전류를 방지하기 위한 Power 저항 대신, 신규 Infra에는 socket별로 저항이 극히 적은 Power Load Switch 소자를 사용했다. 
+Power 저항의 역할인 과전류를 방지함과 동시에 External voltage와 Internal voltage간의 gap을 발생시키는 IR-drop 현상을 최소화하고자 했다. 
+이 때 Power Load Switch를 동작하기 위해 CLK Pin을 assign하여 사용하는데, 이를 활용하여 Board내 영역을 나누어 동작시킬 수 있다. 
+이를 활용하여 Test시 PS별 제한된 Current를 극복할 수 있다.
+(그림xx. 분할진행하는 방식의 차이에 따른 IDDMBT 변화)
 위에 기술한 두가지 방식으로 burn in test시 발생하는 IDDMBT를 제어하고자 했고 그 결과를 비교했다.
 2.3 POWER SOURCE의 재배열.
 (그림x. BIB Source 구성)
+(표xx. 32단 BIB 구성 별 socket 당 Current 허용량)
+(그림xx. 실제 32DP Socket 당 IDDMBT vs QDP)
 
 3. CONCLUSION
-High-performance Device를 위한 DRAM의 수요 증가와 고성능 DRAM이 개발되면서, 제품을 효율적으로 짧은 시간에 Burn in disturb 하기 위한 방법이 필요하다. 이는 Current 측면의 문제뿐만 아니라, 발열, Chamber 위치에 따른 열화 산포 등의 문제점 또한 해결되어야 한다. 현재 High-Stacked DRAM Burn in Process에서 발생하고 있는 Current 측면의 문제를 이 논문에서 제시했다. 고안한 방법을 토대로 앞으로 개발되는 고성능의 DRAM의 Burn in process의 효율을 증가시킬 수 있을 것이다.
+High-performance Device를 위한 DRAM의 수요 증가와 고성능 DRAM이 개발되면서, 제품을 효율적으로 짧은 시간에 Burn in disturb 하기 위한 방법이 필요하다.
+이는 Current 측면의 문제뿐만 아니라, 발열, Chamber 위치에 따른 열화 산포 등의 문제점 또한 해결되어야 한다.
+현재 High-Stacked DRAM Burn in Process에서 발생하고 있는 Current 측면의 문제를 이 논문에서 제시했다.
+고안한 방법을 토대로 앞으로 개발되는 고성능의 DRAM의 Burn in process의 효율을 증가시킬 수 있을 것이다.
+
+
+
+1. Introduction
+As high-performance portable electronic devices have been developed, the large capacity and high speed of DRAM required. 
+Due to the characteristics of the portable device, the size of the memory is limited. 
+Therefore, DRAM for portable devices with a limited size of PKG size and large capacity / high speed performance is being developed. 
+The development of such high-performance DRAM proceeds in the direction of stacking high-speed chips a lot and high and increasing their capacity.
+
+In preparation for the currently developed high-performance DRAM, the performance of Burn in Infra is insufficient.
+Despite the introduction of new facilities, it is impossible to proceed with mass production facilities if the chip of the currently developed high-stacked DRAM is tested at the same time due to the lack of available capacity of the facilities. 
+This paper presents a method of efficiently B/Iing high-stacked DRAM to be produced in the future. Based on the currently developed test process, we intend to contribute to the mass production efficiency of high-performance DRAM.
+
+2. Experiment and Results
+
+
 
 
 
