@@ -1,59 +1,23 @@
-1. INTRODUCTION
-최근 개발되고 있는 고성능의 휴대용 전자기기에서 요구하는 DRAM의 용량/속도(Large-Capacity / High-Speed)가 높아지고 있는 추세이다.
-하지만 휴대용 기기의 특성 상 사용되는 chip의 사이즈는 제한되어 있다.
-때문에 한정된 사이즈의 PKG size에 큰 용량/높은 속도의 성능을 갖는 휴대용기기를 위한 DRAM을 개발이 되고 있다.
-이런 고성능 DRAM의 개발은 높은 속도의 칩을 많이, 높게 쌓아 올리고 그 용량을 증가시키는 방향으로 진행된다.
-(그림1)
-현재 개발되는 고성능의 DRAM에 대비하여, Burn in Infra의 성능이 부족한 상황이다.
-신규설비 도입에도 불구하고, 설비의 가용 용량의 부족으로 현재 개발되는 High-stacked DRAM의 Chip을 동시에 Test할 경우 양산 설비로 진행이 불가능하다.
-이 논문에서는 향후 생산 될 High-stacked DRAM을 효율적으로 B/I 하는 방식을 제시한다. 현재 개발되는 Test Process를 기반으로 고성능 DRAM의 양산 효율성에 기여하고자 한다.
 
-2. PROBLEM RESERCH AND RESULTS
-2.1 제품 용량 증가에 따른 INFRA의 한계
-DRAM의 성능이 발전함과 동시에 제품의 초기 불량을 발현하고 Test하는 설비인 Burn in chamber의 Power 용량이 2.5배 개선되었다.
-Board에 Power를 공급하는 Source의 개수가 늘어나 Power Group의 세분화가 가능해지고, burn in test 시 허용 가능한 Current 용량이 커졌다.
-실제로, 196Density 의 Board에서 8개의 Chip까지 동시에 Test 할 수 있는 수준까지 개선되었다. 
-
-하지만 DRAM의 속도의 향상과 한 제품에 쌓이는 chip의 단수의 증가로 Test 할 때 제품에서 발생하는 Current는 더 커지고 있는 추세이다.
-현재 생산중인 32단 DRAM의 경우 동시에 Test하기 불가능한 수준이다. 앞으로 개발되는 고성능/고용량의 DRAM을 효율적으로 burn in test 하기에는 Chamber의 용량이 부족한 상황이다. Infrastructure를 교체하는 실제로 적용하기에 리스크가 있는 방법을 대신하여 DRAM 자체의 동작을 제한한 방식으로 Current를 제어하는 방식을 제안한다
-
-2.2 Active/Stby Mode 교차 Burn In.
-DRAM PKG 안에 다중으로 쌓인 chip들의 경우 CLK PIN을 통한 High and Low 신호를 통해 제어한다.
-하지만 Burn in board와 설비에서 할당할 수 있는 CLK의 개수는 한정적이고 그 수는 고단으로 쌓은 제품의 chip을 각각 제어하기에 부족하다.
-그래서 일정 수의 chip을 하나의 CLK PIN에 할당하며 균등하게 나눠진 chip group을 제어할 수 있도록 인프라를 개발하고 있다.
-(그림)
-기존 Burn in board에서 과전류를 방지하기 위한 Power 저항 대신, 신규 Infra에는 socket별로 저항이 극히 적은 Power Load Switch 소자를 사용했다. 
-Power 저항의 역할인 과전류를 방지함과 동시에 External voltage와 Internal voltage간의 gap을 발생시키는 IR-drop 현상을 최소화하고자 했다. 
-이 때 Power Load Switch를 동작하기 위해 CLK Pin을 assign하여 사용하는데, 이를 활용하여 Board내 영역을 나누어 동작시킬 수 있다. 
-이를 활용하여 Test시 PS별 제한된 Current를 극복할 수 있다.
-(그림xx. 분할진행하는 방식의 차이에 따른 IDDMBT 변화)
-위에 기술한 두가지 방식으로 burn in test시 발생하는 IDDMBT를 제어하고자 했고 그 결과를 비교했다.
-2.3 POWER SOURCE의 재배열.
-(그림x. BIB Source 구성)
-(표xx. 32단 BIB 구성 별 socket 당 Current 허용량)
-(그림xx. 실제 32DP Socket 당 IDDMBT vs QDP)
-
-3. CONCLUSION
-High-performance Device를 위한 DRAM의 수요 증가와 고성능 DRAM이 개발되면서, 제품을 효율적으로 짧은 시간에 Burn in disturb 하기 위한 방법이 필요하다.
-이는 Current 측면의 문제뿐만 아니라, 발열, Chamber 위치에 따른 열화 산포 등의 문제점 또한 해결되어야 한다.
-현재 High-Stacked DRAM Burn in Process에서 발생하고 있는 Current 측면의 문제를 이 논문에서 제시했다.
-고안한 방법을 토대로 앞으로 개발되는 고성능의 DRAM의 Burn in process의 효율을 증가시킬 수 있을 것이다.
+People TEAM
+Talent Management 그룹
+□ 채용파트
+1. 신입사원 채용 Process를 겪으면서 또는 인턴십을 이수하면서 생각한 개선 사항은 무엇입니까
+2. 어떤 전공과 어떤 경험을 보유한 신입사원을 선발해야 한다고 생각하십니까
+3. 인턴십 경험 유무/시기/기간/직무(삼성전자 or 다른 회사) 및 현재 담당 업무 작성 부탁드립니다.
 
 
 
-1. Introduction
-As high-performance portable electronic devices have been developed, the large capacity and high speed of DRAM required. 
-Due to the characteristics of the portable device, the size of the memory is limited. 
-Therefore, DRAM for portable devices with a limited size of PKG size and large capacity / high speed performance is being developed. 
-The development of such high-performance DRAM proceeds in the direction of stacking high-speed chips a lot and high and increasing their capacity.
+출하품질팀
+1. DRAM 제품 출하 품질 관리(이상 감지 및 출하 제어)
+- Wafer/PKG 출하 신뢰성 평가(평가 Infra/PGM 구축 및 평가 진행, 분석)
+- FAB/EDS/PKG 양산 Infra 이해를 통한 출하 제어 프로세스 구축
+- FAB/EDS/PKG/실장 양산 전수 데이터 기반 데이터 마이닝
 
-In preparation for the currently developed high-performance DRAM, the performance of Burn in Infra is insufficient.
-Despite the introduction of new facilities, it is impossible to proceed with mass production facilities if the chip of the currently developed high-stacked DRAM is tested at the same time due to the lack of available capacity of the facilities. 
-This paper presents a method of efficiently B/Iing high-stacked DRAM to be produced in the future. Based on the currently developed test process, we intend to contribute to the mass production efficiency of high-performance DRAM.
-
-2. Experiment and Results
-
-
+- 직무소개 내용 중 지원을 희망하는 직무를 선택하고(DRAM/SSD/품질시스템),
+- 직무와 관련해서 진행한 담당 업무 경험과 보유 기술에 대해 작성해 주세요.
+- 품질 개선 업무 또는 신제품 Set-up을 진행했던 이력에 대해 작성해 주세요
+- 지원하게 된 동기, 이동 후 이루고자 하는 Career를 작성해 주세요.
 
 
 
