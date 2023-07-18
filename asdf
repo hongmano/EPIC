@@ -1,0 +1,323 @@
+library(stringr)
+library(dplyr)
+library(data.table)
+
+setwd('C:\\Users\\mano.hong\\Desktop\\m805A_ULPZ069W02_K3KL3L30CM-BGCT00L-POD9EA_T090DOE_221230172643')
+
+files <- list.files()
+files <- files[str_detect(files, '[0-9].txt')]
+log_summary <- function(file, DP){
+  
+  
+  
+  remove_duplicate <- function(dat){
+    
+    TN_dup <- dat %>% 
+      group_by(TN) %>% 
+      tally %>% 
+      filter(n > 1)
+    
+    dat_d <- dat %>% filter(TN %in% TN_dup$TN)
+    dat_n <- dat %>% filter(!TN %in% TN_dup$TN)
+    
+    if(nrow(dat_d) > 1){
+      
+      dat_d <- split(dat_d, dat_d$TN)
+      
+      for(i in 1:length(dat_d)){
+        
+        dat_d[[i]] <- dat_d[[i]] %>% 
+          mutate(TN = paste0(TN, '_', 1:nrow(dat_d[[i]])))
+        
+      }
+      
+      dat_d <- rbindlist(dat_d)
+      
+    }
+    
+    dat <- rbind(dat_d, dat_n)
+    
+    return(dat)
+    
+  }
+  
+  
+  dat <- readLines(file)
+  
+  # Start Point of Cycle
+  
+  log_start <- c(str_which(dat, 'SGH_MSG=RUNLOTID'), length(dat))
+  
+  # ?th Retest
+  
+  REGFLG <- substr(regmatches(dat, regexpr('RETFLG = [0-9]+', dat)), 10, 10)
+  
+  # Wrangling
+  
+  dat <- data.frame(code = dat,
+                    REGFLG = '?',
+                    cycle = 0)
+  
+  for(j in 1:length(REGFLG)){
+    
+    dat$REGFLG[log_start[j]:log_start[j+1]] <- REGFLG[j]
+    dat$cycle[log_start[j]:log_start[j+1]] <- j
+    
+  }
+  
+  # Filter < 200 row cycle
+  
+  real <- dat %>% 
+    group_by(cycle) %>% 
+    tally %>% 
+    filter(n > 200) %>% 
+    select(cycle)
+  
+  if(nrow(real) == 0) return()
+  
+  dat <- dat %>% 
+    filter(cycle %in% real$cycle & REGFLG == '0')
+  
+  # Split
+  
+  dat <- split(dat, dat$cycle)
+  
+  result <- list()
+  
+  for(i in 1:length(dat)){
+    
+    PKGMAP <- dat[[i]]$code[dat[[i]]$code %>% str_which('PMAP: ')]
+    PKGMAP <- PKGMAP[-str_which(PKGMAP, '_')]
+    
+    SG <- substr(PKGMAP, 14, 31)
+    DU <- substr(PKGMAP, 9, 9) %>% as.numeric()
+    DO <- substr(PKGMAP, 12, 12) %>% as.numeric()
+    
+    PKGMAP <- data.frame(SG, DU, DO)[1:(PARA*DP), ]
+    
+    tPD <- dat[[i]]$code[dat[[i]]$code %>% str_which('TPD2  n/p')] %>% 
+      str_remove_all('TPD2  n/p  : [12345678]') %>% 
+      str_remove_all('[1-8] \t') %>% 
+      str_remove_all('\t') %>%  
+      str_replace_all('\\s+', ' ') %>% 
+      str_trim %>% 
+      str_split_fixed(' ', PARA) %>% 
+      as.data.frame() %>% 
+      unlist
+    
+    plate <- data.frame(DU = rep(1:PARA, each = DP),
+                        DO = rep(1:DP, PARA)) %>% 
+      left_join(PKGMAP,
+                by = c('DU', 'DO')) %>% 
+      mutate(tPD = round(as.numeric(tPD), 0),
+             variable = paste0('CH', 1:(DP*PARA)),
+             pkg = rep(paste0(file, '_', i, '_', 1:PARA), each = DP))
+    
+    ### Function 
+    
+    if (RANK == 1) {
+      
+      ## Rank 0
+      
+      func_R0 <- dat[[i]]$code[dat[[i]]$code %>% str_which('HF[CH] R0  [0-9]+ [0-9]+')] %>% 
+        str_trim() %>% 
+        str_remove_all('\\[') %>% 
+        str_remove_all('\\]') %>% 
+        str_split_fixed(' ', 22) %>% 
+        as.data.frame() %>% 
+        filter(V12 %in% c(1,2) & V4 != 4996) %>% 
+        select(V2, V4, V5, V6, V7, V9, V12, V13, V14, V20, V22) %>% 
+        `colnames<-`(c('RANK', 'TN', 'HB', 'VDD2H', 'VDD2L', 'tCK', 'HSDO', 'PATN', 'DUT', 'CH', 'DOE'))
+      
+      func <- func_R0
+      
+    }else if (RANK == 2){
+      
+      func_R0 <- dat[[i]]$code[dat[[i]]$code %>% str_which('HF[CH] R0  [0-9]+ [0-9]+')] %>% 
+        str_trim() %>% 
+        str_remove_all('\\[') %>% 
+        str_remove_all('\\]') %>% 
+        str_split_fixed(' ', 22) %>% 
+        as.data.frame() %>% 
+        filter(V12 %in% c(1,2) & V4 != 4996) %>% 
+        select(V2, V4, V5, V6, V7, V9, V12, V13, V14, V20, V22) %>% 
+        `colnames<-`(c('RANK', 'TN', 'HB', 'VDD2H', 'VDD2L', 'tCK', 'HSDO', 'PATN', 'DUT', 'CH', 'DOE'))
+      
+      ## Rank 1
+      
+      func_R1 <- dat[[i]]$code[dat[[i]]$code %>% str_which('HF[CH] R1  [0-9]+ [0-9]+')] %>% 
+        str_trim() %>% 
+        str_remove_all('\\[') %>% 
+        str_remove_all('\\]') %>% 
+        str_split_fixed(' ', 22) %>% 
+        as.data.frame() %>% 
+        filter(V12 %in% c(1,2) & V4 != 4996) %>% 
+        select(V2, V4, V5, V6, V7, V9, V12, V13, V14, V20, V22) %>% 
+        `colnames<-`(c('RANK', 'TN', 'HB', 'VDD2H', 'VDD2L', 'tCK', 'HSDO', 'PATN', 'DUT', 'CH', 'DOE'))
+      
+      func <- func_R0 %>% 
+        mutate(DUT.y = func_R1$DUT,
+               CH.y = func_R1$CH) %>% 
+        rename(DUT.x = DUT,
+               CH.x = CH)
+      
+      for(j in 1:PARA){
+        
+        substr(func$DUT.x, j, j) <- ifelse(substr(func$DUT.x, j, j) == 'P' & substr(func$DUT.y, j, j) == 'P',
+                                           'P',
+                                           ifelse(substr(func$DUT.x, j, j) == '-' | substr(func$DUT.y, j, j) == '-',
+                                                  '-', '*'))
+      }
+      
+      CH.x <- func$CH.x %>% str_split('') %>% unlist
+      CH.y <- func$CH.y %>% str_split('') %>% unlist
+      
+      CH <- list()
+      for (ch in 1:length(CH.x)) {
+        CH[[ch]] <- paste0(CH.x[ch], CH.y[ch])
+      }
+      
+      CH <- unlist(CH) %>% 
+        matrix(nrow = nrow(func), 
+               byrow = T) %>% 
+        as.data.frame()
+      
+      CH <- do.call(paste0, c(CH[1:ncol(CH)]))
+      
+      func <- func %>% 
+        mutate(CH = CH) %>% 
+        select(TN, HB, VDD2H, VDD2L, tCK, HSDO, PATN, DOE, DUT.x, CH) %>% 
+        rename(DUT = DUT.x)
+      
+    }
+    
+    even <- func %>% 
+      filter(HSDO == 1) %>% 
+      mutate(PATN = substr(PATN, 1, 13)) %>%
+      remove_duplicate()
+    odd <- func %>% 
+      filter(HSDO == 2) %>% 
+      remove_duplicate() %>% 
+      mutate(PATN = substr(PATN, 1, 13))
+    other <- even %>% filter(!PATN %in% odd$PATN)
+    even <- even %>% filter(!PATN %in% other$PATN)
+    
+    HSDO <- even %>% 
+      select(TN, HB, VDD2H, VDD2L, tCK, PATN, DOE, DUT, CH) %>% 
+      rename(DUT_even = DUT,
+             CH_even = CH) %>% 
+      inner_join(odd %>% select(TN, HB, VDD2H, VDD2L, tCK, PATN, DOE, DUT, CH) %>% 
+                   rename(DUT_odd = DUT,
+                          CH_odd = CH),
+                 by = c("TN", "HB", "VDD2H", "VDD2L", "tCK", "PATN", "DOE"))
+    
+    other <- other %>% select(TN, HB, VDD2H, VDD2L, tCK, PATN, DOE, DUT, CH)
+    
+    # Merge HSDO Result
+    
+    for(j in 1:nchar(HSDO$CH_even[1])){
+      
+      substr(HSDO$CH_even, j, j) <- ifelse(substr(HSDO$CH_even, j, j) == 'P' & substr(HSDO$CH_odd, j, j) == 'P',
+                                           'P',
+                                           ifelse(substr(HSDO$CH_even, j, j) == '-' | substr(HSDO$CH_odd, j, j) == '-',
+                                                  '-', '*'))
+    }
+    for(j in 1:PARA){
+      
+      substr(HSDO$DUT_even, j, j) <- ifelse(substr(HSDO$DUT_even, j, j) == 'P' & substr(HSDO$DUT_odd, j, j) == 'P',
+                                            'P',
+                                            ifelse(substr(HSDO$DUT_even, j, j) == '-' | substr(HSDO$DUT_odd, j, j) == '-',
+                                                   '-', '*'))
+    }
+    
+    HSDO <- HSDO %>% 
+      rename(DUT = DUT_even,
+             CH = CH_even) %>% 
+      select(-c(CH_odd, DUT_odd)) %>% 
+      remove_duplicate()
+    
+    # MERGE ALL!!!
+    
+    fin <- rbind(HSDO, other)
+    fin_CH <- str_split_fixed(fin$CH, '', nchar(fin$CH)) %>% 
+      as.data.frame() %>% 
+      `colnames<-`(paste0('CH', rep(1:(nchar(fin$CH[1])))))
+    
+    result[[i]] <- fin %>% 
+      select(-c(CH, DUT)) %>% 
+      cbind(fin_CH) %>% 
+      melt(id.vars = c('TN', 'HB', 'VDD2H', 'VDD2L', 'tCK', 'PATN', 'DOE')) %>% 
+      mutate(value = ifelse(value == 'P', 1,
+                            ifelse(value == '*', 0, NA))) %>% 
+      inner_join(plate,
+                 by = "variable") %>% 
+      select(SG, tPD, TN, HB, VDD2H, VDD2L, tCK, PATN, DOE, DU, DO, value, pkg) %>% 
+      mutate(test = REGFLG[i]) 
+    
+  }
+  
+  fin <- rbindlist(result)
+  
+  return(fin)
+  
+}
+
+# Start -------------------------------------------------------------------
+
+DP <- 4
+PARA <- 4
+RANK <- 1
+result <- list()
+
+for(i in 1:length(files)){
+  
+  result[[i]] <- log_summary(files[i], DP)
+  print(paste0(i, 'th Log has DONE........'))
+  
+}
+
+result <- rbindlist(result)
+
+result %>% 
+  na.omit %>% 
+  mutate(PATN = ifelse(PATN == 'PDCS4FDBN7D5N', 'PDCS4FDBT7D5N', PATN)) %>% 
+  group_by(pkg) %>% 
+  summarise(value = sum(value)) %>% 
+  nrow()
+
+result <- result %>% 
+  na.omit %>% 
+  filter(SG != '0x0000000000000000')
+
+# Summary -----------------------------------------------------------------
+
+### 1. tPD x YLD
+
+tPD <- result %>% 
+  filter(TN == 3000) %>% 
+  group_by(tPD) %>% 
+  tally
+
+result %>% 
+  mutate(PATN = ifelse(PATN == 'PDCS4FDBN7D5N', 'PDCS4FDBT7D5N', PATN)) %>% 
+  group_by(TN, VDD2H, tCK, PATN, DOE, tPD) %>% 
+  summarise(value = sum(value)) %>% 
+  inner_join(tPD, by = 'tPD') %>% 
+  mutate(YLD = value / n) %>% 
+  select(-c(value, n)) %>% 
+  dcast(TN + VDD2H + tCK + PATN + DOE ~ tPD) %>% 
+  arrange(VDD2H, DOE, PATN) %>% 
+  write.csv('C:/Users/mano.hong/Desktop/tPDYLD.csv', row.names = F)
+
+### 2. DUT x YLD
+
+result %>% 
+  mutate(PATN = ifelse(PATN == 'PDCS4FDBN7D5N', 'PDCS4FDBT7D5N', PATN)) %>% 
+  group_by(TN, VDD2H, VDD2L, tCK, PATN, DOE, pkg) %>% 
+  summarise(value = min(value)) %>% 
+  ungroup() %>% 
+  group_by(TN, VDD2H, VDD2L, tCK, PATN, DOE) %>% 
+  summarise(n = n(),
+            value = sum(value),
+            YLD = value / n) %>% 
+  write.csv('C:/Users/mano.hong/Desktop/DUTYLD.csv', row.names = F)
