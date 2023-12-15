@@ -1058,3 +1058,133 @@ for ipat in range(len(patnlist)):
          if x_tmp==xyreg_name[ixy]: x_val=xyreg_[ixy]
          if y_tmp==xyreg_name[ixy]: y_val=xyreg_[ixy]
          # if y_tmp=='YS_2': print('y_tmp:',ixy,y_tmp,y_val)
+
+      if 'SCROFF' not in pat_seq_sp:
+         # print(patline_seq[i])
+         # print(x_val,end='_')
+         if patn_scr=='2':
+            if x_val>0xffff:
+               x_val2=x_val//0x10000
+               x_val=scr2[x_val%0x10000]
+               x_val=x_val2*0x10000+x_val
+            elif bn_use>0:
+               x_val2=b_val
+               x_val=scr2[x_val%0x10000]
+               x_val=x_val2*0x10000+x_val
+               # print('%05X'%(x_val),end=' ')
+            else:
+               # print("---",x_val)
+               x_val=scr2[x_val]
+            # print(x_val,end=' ')
+         elif patn_scr=='N':
+            if bn_use>0:
+               x_val2=b_val
+               x_val=x_val2*0x10000+x_val
+               # print('%05X'%(x_val),end=' ')
+            else:
+               # print(x_val)
+               x_val=x_val
+
+
+
+      xbin=bin(x_val)
+      xbinary=''
+      for ibin in range(22-len(xbin)):
+         xbinary=xbinary+'0'
+      xbinary=xbinary+xbin[2:]
+
+      if bn_use>0:
+         y_val=n_val*0x10000+(y_val& 0xffff)
+
+      ybin=bin(y_val)
+      ybinary=''
+      for ibin in range(22-len(ybin)):
+         ybinary=ybinary+'0'
+      ybinary=ybinary+ybin[2:]
+
+      if patline_seq[i].find('D<TP_')>-1:
+         # print(patline_seq[i][patline_seq[i].find('D<TP_')+5:])
+         tp_idx=int(patline_seq[i][patline_seq[i].find('D<TP_')+5])
+         if jzd_status==0:
+            tp1=tp1_[tp_idx]
+            tp2=tp2_[tp_idx]
+         elif jzd_status==1:
+            tp1=tp1_[tp_idx]^0xfffff
+            tp2=tp2_[tp_idx]^0xfffff
+      else:
+         if jzd_status==0:
+            tp1=tp1_[1]
+            tp2=tp2_[1]
+         elif jzd_status==1:
+            tp1=tp1_[1]^0xfffff
+            tp2=tp2_[1]^0xfffff
+
+      for iCA in range(7):
+         if PinFm_CA[iCA][0]=='C':
+            if PinFm_CA[iCA] in pat_seq_sp:
+               P_CA[iCA]='1'
+            else:
+               P_CA[iCA]='0'
+            
+            
+         elif PinFm_CA[iCA][0]=='X':
+            xbit=int(PinFm_CA[iCA][1:])
+            P_CA[iCA]=xbinary[19-xbit]
+         elif PinFm_CA[iCA][:2]=='/X':
+
+            xbit=int(PinFm_CA[iCA][2:])
+            if xbinary[19-xbit]=='0':
+               P_CA[iCA]='1'   
+            elif xbinary[19-xbit]=='1':
+               P_CA[iCA]='0'   
+            else:
+               P_CA[iCA]='-'
+            # print(xbinary," : ",xbit,"(",xbinary[19-xbit],")"," :  ",b_val," : ",patline_seq[i],P_CA)
+            # print('%2d %5x'%(xbit,x_val))
+            # if xbit>15:
+               # print('%2d %5x'%(xbit,x_val))
+            # P_CA[iCA]=xbinary[19-xbit]
+         elif PinFm_CA[iCA][0]=='Y':
+            ybit=int(PinFm_CA[iCA][1:])
+            P_CA[iCA]=ybinary[19-ybit]
+         elif PinFm_CA[iCA][:2]=='/Y':
+            ybit=int(PinFm_CA[iCA][2:])
+            # print(PinFm_CA[iCA],ybit,ybinary[19-ybit],ybinary)
+            if ybinary[19-ybit]=='0':
+               P_CA[iCA]='1'   
+            elif ybinary[19-ybit]=='1':
+               P_CA[iCA]='0'   
+            else:
+               P_CA[iCA]='-'
+            # if CYP==16: print(ybit,P_CA[iCA],xyreg_[36],xyreg_[40],xyreg_[44],xyreg_[48],'-',print(patline_seq[i]),end='')
+         elif PinFm_CA[iCA]=='FL':
+            P_CA[iCA]='0'
+         elif PinFm_CA[iCA]=='FH':
+            P_CA[iCA]='1'
+         else:
+            P_CA[iCA]=PinFm_CA[iCA]
+            print(iCA,PinFm_CA[iCA][0])
+      
+
+      if 'C9' in pat_seq_sp:
+         P_R0_CS='1'
+      else:
+         P_R0_CS='0'
+      if 'C29' in pat_seq_sp:
+         P_R1_CS='1'
+      else:
+         P_R1_CS='0'
+
+      if 'C14' in pat_seq_sp:
+         P_CKT='1'
+      else:
+         P_CKT='0'
+
+      if 'C27' in pat_seq_sp and 'C28' in pat_seq_sp:
+         P_WCKT='11_'
+      elif 'C27' in pat_seq_sp:
+         P_WCKT='10_'
+      elif 'C28' in pat_seq_sp:
+         P_WCKT='01_'
+      else:
+         P_WCKT='00_'
