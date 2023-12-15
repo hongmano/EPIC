@@ -100,3 +100,156 @@ header_sdef_cbit=['']*3000
 sdef_idx=0
 
 xsp=127
+
+# path=str(sys.argv[1])
+path='.\\'
+
+#path="./T5511/Dsol_200109/X16_8BANK_R21/"
+file_list = os.listdir(path)
+# print(path)
+# src_file=str(sys.argv[1])
+patline=['']
+patline_seq=['']
+pccnt_seq=[0]
+icnt_seq=[0]
+label_seq=['']
+lineway_seq=[0]
+patline_f0=['']
+
+# pattern .
+patnlist=[
+   '',
+   'GOSUB FUNA(3061,6,4,4,183,LP5VD2,LP5TCK,"VND01","FSD02","PRFE2","PDEY4FADC9D6A",#6666,0.0NS,3.9US," Address Compliment RDBI "1"=4              ")'
+
+
+  ]
+	
+
+# print(patnlist[0][5:len(patnlist[0])-1].split(','))
+
+
+# 1개 패턴 씩 추출 시작
+for ipat in range(len(patnlist)):
+   
+   
+   # ------------------------------------------------------------
+   # ------------------------------------------------------------
+   # 0. .pattern 사전 작업.
+   # ------------------------------------------------------------
+   # ------------------------------------------------------------
+
+   
+   print(patnlist[ipat])
+   #---------------- init
+   xyreg_=[0]*100
+   dreg_=[0]*200
+   dreg_region=[0]*200
+   tpreg_=[0]*100
+
+   tp1=0
+   tp2=0
+   tp1_=[0,0,0,0,0]
+   tp2_=[0,0,0,0,0]
+   jzd_status=0
+   dinv=0
+
+
+   # default 조건
+   for idr in range(len(dreg_name)):
+      if dreg_name[idr]=='D2A_1':
+         dreg_[idr]=int('0x3f0',16)
+      elif dreg_name[idr]=='D2A_2':
+         dreg_[idr]=int('0x3f0',16)
+      elif dreg_name[idr]=='D3B_1':
+         dreg_[idr]=int('0xffff',16)
+      elif dreg_name[idr]=='D4B_1':
+         dreg_[idr]=int('0x20',16)
+      elif dreg_name[idr]=='D4B_2':
+         dreg_[idr]=int('0x20',16)
+
+   # for itp in range(len(tpreg_name)):
+   #    if tpreg_name[itp]=='TPH1A_1':
+   #       tpreg_[itp]=int('0x6666',16)
+   #    if tpreg_name[itp]=='TPH2A_1':
+   #       tpreg_[itp]=int('0x6666',16)
+
+   x_addr=0
+   y_addr=0
+
+   # --- label 정보 저장 공간  (이름/pc/?)
+   label_name=['']*240
+   label_pc=[0]*240
+   label_idx=[0]*240
+   ccflg='1011000000000001'
+
+   # --- header.asc 분해 - 최종 cbit 만 남게.
+   header_sdef_alias=['']*3000
+   header_sdef_desc=['']*3000
+   header_sdef_cbit=['']*3000
+   sdef_idx=0
+
+   # x max address
+   xsp=127
+
+   #---------------- 
+
+
+   if len(patnlist[ipat])<10:
+      continue
+   dreg_region=[0]*200
+
+   # print(patnlist[ipat])
+   patn_lst=patnlist[ipat][5:len(patnlist[ipat])-1].split(',')
+   # patn_name=patn_lst[10].strip('"')+'NN.asc'
+   patn_name=patn_lst[10].strip('"')+'NN.asc'
+   patn_fmt=patn_lst[8].strip('"')
+   patn_mode=patn_lst[9].strip('"')
+   patn_iofmt=patn_lst[11]
+   patn_scr=patn_lst[9].strip('"')[4]
+   patn_tn=patn_lst[0]
+
+   if patn_mode[0]=='D':
+      dinv=1
+      print(patn_mode)
+
+   
+   if patn_scr=='2':
+      xsp=0x7f
+   if patn_scr=='N':
+      xsp=0xffff
+
+   # print(patn_scr,xsp)
+
+   if patn_fmt=='FTD01':
+      pat_format='FMD01'
+   elif patn_fmt=='FTD02':
+      pat_format='FMD02'
+   else:
+      pat_format=patn_fmt
+
+
+   if patn_mode[2]=='F':
+      print("HSDI_OTF")
+      if patn_mode[3]=='E': ccflg='0000000000010100'
+      if patn_mode[3]=='O': ccflg='0000000000011000'
+   elif patn_mode[2]=='G':
+      print("HSDI_OTF_ODD")
+      if patn_mode[3]=='E': ccflg='0000000000110100'
+      if patn_mode[3]=='O': ccflg='0000000000111000'
+   elif patn_mode[2]=='G':
+      print("HSDI/DM_OTF_ODD")
+      if patn_mode[3]=='E': ccflg='0000000001010100'
+      if patn_mode[3]=='O': ccflg='0000000001011000'
+
+   compile_opt_=0
+   compile_opt1=''
+   compile_opt2=''
+   if patn_mode[2] in ['C','G','I','O','P','Q']:
+      compile_opt1='B'
+   else:
+      compile_opt1='A'
+
+   if patn_mode[3]=='E': compile_opt2='E'
+   if patn_mode[3]=='O': compile_opt2='O'
+
+   print(patn_mode,patn_mode[2],patn_mode[3],compile_opt1,compile_opt2)
