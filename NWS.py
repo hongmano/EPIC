@@ -863,3 +863,198 @@ for ipat in range(len(patnlist)):
                   if patline_split[j_sp_loc+1]==label_name[ii]:
                      jump_addr=label_idx[ii]
                # jump_=1
+
+      elif lineway[pi]==1 and patline[pi][:15].find('IDXI')>-1:  
+         if patline_split[0][0:4]=='IDXI':
+            j_sp_loc=0
+         elif patline_split[1][0:4]=='IDXI':
+            j_sp_loc=1
+         elif patline_split[2][0:4]=='IDXI':
+            j_sp_loc=2
+         else:
+            j_sp_loc=3
+         
+         if loop_cnt[0]<0:   # first  case
+            if patline_split[j_sp_loc+1][0]=='#':
+               loop_cnt[0]=int('0x'+patline_split[j_sp_loc+1][1:],16)+1
+               if loop_cnt[0]>100:  loop_cnt[0]=100
+            else:
+               loop_cnt[0]=int(patline_split[j_sp_loc+1])+1
+               if loop_cnt[0]>100:  loop_cnt[0]=100
+
+         if loop_cnt[0]==0:  # loop complete case
+            loop_cnt[0]=-1
+            jump_=0
+         elif loop_cnt[0]>0:                      # loop process
+            loop_cnt[0]=loop_cnt[0]-1
+            jump_=1
+
+         jump_addr=pi     
+
+
+         # print(patline_split,jump_) 
+         # print(patline_split,loop_cnt)
+
+
+      if lineway[pi]==16 and jump_==1:
+         pi=jump_addr
+         jump_=0
+      elif lineway[pi]==16 and call_==1:
+         # print("jsr ",call_addr[cr_sp-1],cr_sp,pi)
+         pi=call_addr[cr_sp-1]
+         call_=0
+      elif lineway[pi]==16 and rtn_==1:
+         # print("RTN ",ret_addr,cr_sp,pi,patline_split)
+         
+         pi=ret_addr[cr_sp-1]
+         # print(ret_addr,cr_sp,pi)
+         cr_sp=cr_sp-1
+         rtn_=0
+      else:
+         pi=pi+1
+
+      if patline_split[0]=='STPS':
+         break
+
+   #path = "./T5511/Dsol_191226/*k*.asc"
+   #file_list = glob.glob(path)
+
+
+   # ------------------------------------------------------------------------
+   # ------------------------------------------------------------------------
+   # ----  3. pattern extract routine -nn                                          
+   # ----                                                                    
+   # ------------------------------------------------------------------------
+   # ------------------------------------------------------------------------
+
+   # pat_format='FMD02'
+   CYP=0
+
+   F_CA=['','','','','','','']
+   PinFm_CA=['','','','','','','']
+   P_CA=['','','','','','','']
+   # print(pat_format)
+   if pat_format=='FMD01' or pat_format=='FSD01' or pat_format=='FTD01' or pat_format=='FTS01':
+      F_CA[0]=FMD01_CA0
+      F_CA[1]=FMD01_CA1
+      F_CA[2]=FMD01_CA2
+      F_CA[3]=FMD01_CA3
+      F_CA[4]=FMD01_CA4
+      F_CA[5]=FMD01_CA5
+      F_CA[6]=FMD01_CA6
+      # print(pat_format)
+   elif pat_format=='FMD02' or pat_format=='FSD02' or pat_format=='FTD02' or pat_format=='FTS02':
+      F_CA[0]=FMD02_CA0
+      F_CA[1]=FMD02_CA1
+      F_CA[2]=FMD02_CA2
+      F_CA[3]=FMD02_CA3
+      F_CA[4]=FMD02_CA4
+      F_CA[5]=FMD02_CA5
+      F_CA[6]=FMD02_CA6
+      # print(pat_format)
+
+   x_val=0
+   y_val=0
+
+   
+   x_tmp0=''
+   x_tmp =''
+   y_tmp0=''
+   y_tmp =''
+
+   for i in range(pat_seq_cnt):
+
+      # print(tp1_," : ",tp2_)
+
+      PinFm_CA=['','','','','','','']
+      P_CA=['','','','','','','']
+      pat_seq_sp=patline_seq[i].split()
+      # if (patline_seq[i].find("LM2")>-1): print(patline_seq[i],pat_seq_sp)
+
+      # if patline_seq[i].find("<B")>-1:
+      #    print(patline_seq[i],pat_seq_sp)
+      if patline_seq[i].find("OUT")>-1:
+         if pat_seq_sp[1]=='A': bn_cnt=0
+         elif pat_seq_sp[1]=='B':  bn_cnt=1
+         elif pat_seq_sp[1]=='C':  bn_cnt=2
+         elif pat_seq_sp[1]=='D':  bn_cnt=3
+         elif pat_seq_sp[1]=='E':  bn_cnt=4
+         elif pat_seq_sp[1]=='F':  bn_cnt=5
+         elif pat_seq_sp[1]=='G':  bn_cnt=6
+         elif pat_seq_sp[1]=='H':  bn_cnt=7
+         # print("-",patline_seq[i],pat_seq_sp,bn_cnt)
+
+      if patline_seq[i].find("JZD")>-1:
+         if jzd_status==1: jzd_status=0
+         elif jzd_status==0: jzd_status=1
+         # print(jzd_status,patline_seq[i])
+
+      # print(patline_seq[i])
+
+      # if patline_seq[i].find('YC_4<YC_4+D1_4')>-1: 
+      #    print(pat_seq_sp)
+      #    print(xyreg_[36],xyreg_[40],xyreg_[44],xyreg_[48])
+
+      # print('%5d %5d %5X %10s %2d '%(i,icnt_seq[i],pccnt_seq[i],label_seq[i],lineway_seq[i]),end=' : ')
+      if lineway_seq[i]==1: patt_label=label_seq[i]
+
+      patline_f0[i]=format('%06X %10s %5d %2d '%(int(i/16)+1,patt_label,pccnt_seq[i],lineway_seq[i]-1))
+      # print('%100s'%(patline_seq[i]),end=' : ')
+
+      if patline_seq[i].find('CYP')>-1:
+         cyp_tmp=patline_seq[i][patline_seq[i].find('CYP'):patline_seq[i].find('CYP')+10].split()[0]
+         CYP=int(cyp_tmp[3:])
+      else:      
+         CYP=1
+
+      # if patline_seq[i].find('M2')>-1:
+      if 'M2' in pat_seq_sp:
+         for iCA in range(7):
+            PinFm_CA[iCA]=F_CA[iCA][CYP-1].split(',')[1]
+      else:
+         for iCA in range(7):
+            # print(pat_seq_sp,CYP,F_CA) 
+            if F_CA[iCA][CYP-1].find(',')>-1:
+               PinFm_CA[iCA]=F_CA[iCA][CYP-1].split(',')[0]
+            else:
+               PinFm_CA[iCA]=F_CA[iCA][CYP-1]
+         # if CYP==16: print('%3s %3s %3s %3s %3s %3s %3s'%(PinFm_CA[0],PinFm_CA[1],PinFm_CA[2],PinFm_CA[3],PinFm_CA[4],PinFm_CA[5],PinFm_CA[6]),end=" ~ ")
+
+
+      # print('%3s %3s %3s %3s %3s %3s %3s'%(PinFm_CA[0],PinFm_CA[1],PinFm_CA[2],PinFm_CA[3],PinFm_CA[4],PinFm_CA[5],PinFm_CA[6]),end=" ~ ")
+
+
+
+      x_tmp0=x_tmp
+      y_tmp0=y_tmp
+      # x,y address register
+      if patline_seq[i].find('X<')>-1:
+         x_tmp=patline_seq[i][patline_seq[i].find('X<'):patline_seq[i].find('X<')+10].split()[0].split('<')[1]
+      elif patline_seq[i].find(' XT')>-1:
+         x_tmp=patline_seq[i][patline_seq[i].find(' XT')+1:patline_seq[i].find(' XT')+10].split()[0]
+      else:
+         x_tmp="XC_1"
+
+      if x_tmp=='XT':
+         x_tmp='XT1'
+      elif x_tmp.find('_')==-1 and x_tmp[1]!='T':
+         x_tmp=x_tmp+'_1'
+
+      if patline_seq[i].find('Y<')>-1:
+         y_tmp=patline_seq[i][patline_seq[i].find('Y<'):patline_seq[i].find('Y<')+10].split()[0].split('<')[1]
+      elif patline_seq[i].find(' YT')>-1:
+         y_tmp=patline_seq[i][patline_seq[i].find(' YT')+1:patline_seq[i].find(' YT')+10].split()[0]
+      else:
+         y_tmp="YC_1"
+
+      if y_tmp=='YT':
+         y_tmp='YT1'
+      elif y_tmp.find('_')==-1 and y_tmp[1]!='T':
+         y_tmp=y_tmp+'_1'
+
+      # if y_tmp[:4]=='YS_2': print('y_tmp:',y_tmp,patline_seq[i])
+
+      for ixy in range(len(xyreg_name)):
+         if x_tmp==xyreg_name[ixy]: x_val=xyreg_[ixy]
+         if y_tmp==xyreg_name[ixy]: y_val=xyreg_[ixy]
+         # if y_tmp=='YS_2': print('y_tmp:',ixy,y_tmp,y_val)
