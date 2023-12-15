@@ -253,3 +253,613 @@ for ipat in range(len(patnlist)):
    if patn_mode[3]=='O': compile_opt2='O'
 
    print(patn_mode,patn_mode[2],patn_mode[3],compile_opt1,compile_opt2)
+
+   # --- advan REGION 반영(looping idx 및 reg 설정 가져옴)
+   # index or loop cnt 파일 추출 반영
+   region_src = open('WHREGION.asc','r')
+   rlabel='ABCDEF:'      
+   rlabel_set=''
+   ppatn=patn_name[6:13]
+   print(ppatn)
+   if ppatn[3]=='9' and ppatn[5]=='6' : 
+      print(ppatn)
+      ppatn=ppatn[:3]+"8"+ppatn[4]+"5"+ppatn[6:]
+      print(ppatn)
+   
+   for rline in region_src:
+      rline_tmp=rline.split()
+      # print(patn_name[6:13],rline)
+
+      if patn_name[6:13] in rline and rlabel=='ABCDEF:':
+         rlabel=rline_tmp[len(rline_tmp)-1]+":"
+      if rlabel in rline and rlabel!='ABCDEF:':
+         rlabel_set='Y'
+         print("rline=",rline)
+      elif rlabel_set=='Y' and len(rline_tmp)>0:
+         print("rline=",rline)         
+         if rline_tmp[0]=='GOTO':
+            rlabel_set=''
+         if rline_tmp[0]=='REG' and rline_tmp[2][0]=='D':
+            if rline_tmp[2]=='D1': rline_tmp[2]='D1A_1'
+            if rline_tmp[2]=='D2': rline_tmp[2]='D2A_1' 
+            if rline_tmp[2]=='D1_2': rline_tmp[2]='D1A_2'
+            if rline_tmp[2]=='D2_2': rline_tmp[2]='D2A_2' 
+            if rline_tmp[2]=='D1_3': rline_tmp[2]='D1A_3'
+            if rline_tmp[2]=='D2_3': rline_tmp[2]='D2A_3' 
+            if rline_tmp[2]=='D1_4': rline_tmp[2]='D1A_4'
+            if rline_tmp[2]=='D2_4': rline_tmp[2]='D2A_4' 
+            if rline_tmp[2]=='D3B': rline_tmp[2]='D3B_1' 
+            if rline_tmp[2]=='D4B': rline_tmp[2]='D4B_1' 
+            if rline_tmp[2]=='D5': rline_tmp[2]='D5_1'
+            if rline_tmp[2]=='D6': rline_tmp[2]='D6_1' 
+            
+            for idr in range(len(dreg_name)):
+               if dreg_name[idr]==rline_tmp[2]:
+                  dreg_region[idr]=1
+                  print(rline_tmp)
+                  if rline_tmp[4]=='XSP':
+                     dreg_[idr]=xsp
+                     # print(dreg_name[idr],xsp)
+                  elif rline_tmp[4][0]=='#':
+                     dreg_[idr]=int(rline_tmp[4][1:],16)
+                  elif rline_tmp[4]=='(XSP+1)/2':
+                     dreg_[idr]=int((xsp+1)/2)
+                  print(idr,dreg_name[idr],dreg_[idr],rline_tmp[4])
+
+
+   # src = open(src_file,'r')
+   print(patn_name)
+
+   # --- 드디어 패턴 오픈...
+   src = open(patn_name,'r')
+   linecnt=0
+   patt_start=0
+   patt_register=0
+   bn_use=0
+
+   # ------------------------------------------------------------
+   # ------------------------------------------------------------
+   # 1.pattern parsing : alias 해제 / insert 해제 
+   # ------------------------------------------------------------
+   # ------------------------------------------------------------
+   for line in src:
+      tmpline=line
+      tmpsplit=line.split()
+      # if len(tmpsplit)>0:
+      # if linecnt<100:
+         # print(line,end='')
+         # if len(tmpsplit)>0:
+            # print(tmpsplit[0])
+      if len(tmpsplit)>0:  # 빈행 제거
+         if tmpsplit[0][0]!=';': # 행 전체가 주석 처리 된 것 정리
+            if patt_start==0 and patt_register==0: # pattern 처음 부터 reigster 선언 전 까지 
+               if tmpsplit[0]=='INSERT':
+                  if tmpsplit[1].find('MB')>-1: # B/N register 사용 경우 구분
+                     bn_use=1                
+                  ins_file_naem=tmpsplit[1]
+                  ins_src = open(path+ins_file_naem+'.asc','r')
+                  for ins_line in ins_src:  # insert 파일 오픈
+                     ins_tmpline=ins_line
+                     ins_tmpsplit=ins_line.split()
+                     if len(ins_tmpsplit)>1:  #빈행 및 주석 라인 제거
+                        # if ins_tmpsplit[0]='%IFE': ----nn
+                        if ins_tmpsplit[0]=="%IFE":                           
+                           if ins_tmpsplit[1]!=compile_opt1 and ins_tmpsplit[1]!=compile_opt2 and (compile_opt2 not in ins_tmpsplit[1].split('.')):
+                              compile_opt_=1    # %ife 무시 하는 경우 반영
+                           else:
+                              compile_opt_=0
+                              print("-",ins_tmpsplit,compile_opt1,compile_opt2)
+                           
+                        elif ins_tmpsplit[0]=="%ENDC":
+                           compile_opt_=0
+
+                        if compile_opt_==0:   
+                           if ins_tmpsplit[0][0]!=';' and ins_tmpline[0:10].find('SDEF')>-1: # SEDF 있는 것만 반영
+                              # print(ins_line,end='')
+                              if ins_tmpsplit[1][len(ins_tmpsplit[1])-1]=='=':   # ex) SDEF A= ?  아마 잘못된 듯...
+                                 header_sdef_alias[sdef_idx]=ins_tmpsplit[1][len(ins_tmpsplit[1])-2]   
+                                 # print('===')
+                              else:
+                                 # print(ins_tmpline,sdef_idx)
+                                 header_sdef_alias[sdef_idx]=ins_tmpsplit[1]  # SDEF A = B   에서 A 저장
+                                 for ij in range(3,len(ins_tmpsplit)):  # B에서 미리  SDEF로 선언된 alias 찾아 반영
+                                    desc_match=0
+                                    # print(ins_tmpsplit[ij])
+                                    for ik in range(sdef_idx):
+                                       # print(ik,header_sdef_alias[sdef_idx])   
+                                       if ins_tmpsplit[ij]==header_sdef_alias[ik]:
+                                          # print(ins_tmpsplit[ij],header_sdef_desc[ik])
+                                          header_sdef_cbit[sdef_idx]=header_sdef_cbit[sdef_idx]+header_sdef_cbit[ik]+' '  # 있을 경우
+                                          # header_sdef_cbit[sdef_idx]=header_sdef_cbit[sdef_idx]+header_sdef_desc[ik]+' '  # 있을 경우
+                                          # print(ins_tmpsplit[ij]," - ",header_sdef_desc[ik]," - ",header_sdef_cbit[sdef_idx])
+                                          desc_match=1
+                                    if desc_match==0:  # 없을 경우
+                                       # print('-',end='')
+                                       # print(ins_tmpsplit[ij],ins_tmpsplit[1])
+                                       header_sdef_cbit[sdef_idx]=header_sdef_cbit[sdef_idx]+ins_tmpsplit[ij]+' '
+                                    # print(ij,ins_tmpsplit[ij]," - ",header_sdef_cbit[sdef_idx])
+                              header_sdef_desc[sdef_idx]=ins_tmpline[ins_tmpline.find('=')+2:len(ins_tmpline)-1] # 원형 저장
+                              # if ins_line.find("YAD2")>-1: 
+                              #    print("~~~",ins_line)   
+                              #    print(header_sdef_alias[sdef_idx],header_sdef_desc[sdef_idx])
+                              # print("0^^ :",header_sdef_desc[sdef_idx])
+                              # print("1-- :",header_sdef_cbit[sdef_idx])
+                              # if ins_line.find("XYSLD")>-1: 
+                              #    print("0^^ :",ins_line,header_sdef_alias[sdef_idx],header_sdef_desc[sdef_idx],header_sdef_cbit[sdef_idx])
+                              sdef_idx=sdef_idx+1
+                           # if ins_line.find("YAD2")>-1: print("~~~",ins_line)
+                     # if ins_line.find("YAD2")>-1: print(ins_line)
+                     # if header_sdef_desc[sdef_idx-1].find("YAD2ALL")>-1: print("^",ins_line)
+                  ins_src.close()
+                  # print(header_sdef_desc)
+                  
+               else: # insert 파일 밖에서 선언된 SDEF 처리
+                  if len(tmpsplit)>1:
+                     # print(tmpsplit)
+                     if tmpsplit[0][0]!=';' and tmpline[0:10].find('SDEF')>-1:
+                        if tmpsplit[1][len(tmpsplit[1])-1]=='=':
+                           header_sdef_alias[sdef_idx]=tmpsplit[1][len(tmpsplit[1])-2]   
+                        else:
+                           header_sdef_alias[sdef_idx]=tmpsplit[1]
+                           for ij in range(3,len(tmpsplit)):
+                              desc_match=0
+                              for ik in range(sdef_idx):
+                                 if tmpsplit[ij]==header_sdef_alias[ik]:
+                                    # header_sdef_cbit[sdef_idx]=header_sdef_cbit[sdef_idx]+header_sdef_desc[ik]+' '
+                                    header_sdef_cbit[sdef_idx]=header_sdef_cbit[sdef_idx]+header_sdef_cbit[ik]+' '
+                                    desc_match=1
+                              if desc_match==0:
+                                 header_sdef_cbit[sdef_idx]=header_sdef_cbit[sdef_idx]+tmpsplit[ij]+' '
+                        header_sdef_desc[sdef_idx]=tmpline[tmpline.find('=')+2:len(tmpline)-1]
+                        sdef_idx=sdef_idx+1
+
+            if patt_start==1:  # pattern 시작 
+               
+               tmpline_cb=''
+               if tmpline.find(';')>-1:  # 주석 문이 있을 경우   주석 전까지만 추출
+                  tmpsplit=tmpline[:tmpline.find(';')].split()
+               else:
+                  tmpsplit=tmpline.split()
+
+               # if tmpline.find("YAD2ALL")>-1:
+               #    print(tmpline)
+
+
+               if tmpsplit[0]=='INSERT': # insert 1
+                  # print(tmpsplit)
+                  ins_file_naem=tmpsplit[1]
+                  ins_src = open(path+ins_file_naem+'.asc','r')
+                  for ins_line in ins_src:
+                     tmpline_cb=''
+                     ins_tmpline=ins_line
+                     # ins_tmpsplit=ins_line.split()
+                     if ins_tmpline.find(';')>-1:
+                        ins_tmpsplit=ins_tmpline[:ins_tmpline.find(';')].split()
+                     else:
+                        ins_tmpsplit=ins_tmpline.split()
+
+                     if len(ins_tmpsplit)>0:
+                        if ins_tmpsplit[0]=='INSERT':   # insert 2
+                           ins_file_naem2=ins_tmpsplit[1]
+                           ins_src2 = open(path+ins_file_naem2+'.asc','r')
+                           for ins_line2 in ins_src2:
+                              tmpline_cb=''
+                              ins_tmpline2=ins_line2
+                              # ins_tmpsplit=ins_line.split()
+                              if ins_tmpline2.find(';')>0:
+                                 ins_tmpsplit2=ins_tmpline2[:ins_tmpline2.find(';')].split()
+                              else:
+                                 ins_tmpsplit2=ins_tmpline2.split()
+                              if len(ins_tmpsplit2)>0:
+                                 if ins_tmpsplit2[0][0]!=';':
+                                    for ik in range(len(ins_tmpsplit2)):
+                                       alias_match=0
+                                       for ik2 in range(sdef_idx):
+                                          if ins_tmpsplit2[ik]==header_sdef_alias[ik2]:
+                                             tmpline_cb=tmpline_cb+header_sdef_cbit[ik2]+' '
+                                             alias_match=1                                             
+                                       if alias_match==0:
+                                          tmpline_cb=tmpline_cb+ins_tmpsplit2[ik]+' '
+                                    # print(ins_tmpsplit,"-",tmpline_cb.split())
+                                    patline[linecnt]=tmpline_cb
+                                    linecnt=linecnt+1
+                                    patline.append([''])
+                        else:
+                           if ins_tmpsplit[0][0]!=';':
+                              for ik in range(len(ins_tmpsplit)):
+                                 alias_match=0
+                                 for ik2 in range(sdef_idx):
+                                    if ins_tmpsplit[ik]==header_sdef_alias[ik2]:
+                                       tmpline_cb=tmpline_cb+header_sdef_cbit[ik2]+' '
+                                       alias_match=1
+                                 if alias_match==0:
+                                    tmpline_cb=tmpline_cb+ins_tmpsplit[ik]+' '
+                              # print(ins_tmpsplit,"-",tmpline_cb.split())
+                              patline[linecnt]=tmpline_cb
+                              linecnt=linecnt+1
+                              patline.append([''])
+                  ins_src.close()
+               else:
+                  # print(tmpline,end='')
+                  ik_start=0
+                  if tmpsplit[0]=='JSR' or tmpsplit[0]=='JNC' or tmpsplit[0]=='JMP' or tmpsplit[0]=='JNI':
+                     ik_start=2
+                     tmpline_cb=tmpsplit[0]+" "+tmpsplit[1]+" "
+                  for ik in range(ik_start,len(tmpsplit)):
+                     alias_match=0
+                     for ik2 in range(sdef_idx):
+                        if tmpsplit[ik]==header_sdef_alias[ik2]:
+                           tmpline_cb=tmpline_cb+header_sdef_cbit[ik2]+' '
+                           alias_match=1
+                           # if tmpsplit[ik]=='YAD1ALL':
+                           #    print(tmpline_cb)
+                           #    print(dreg_)
+                     if alias_match==0:
+                        tmpline_cb=tmpline_cb+tmpsplit[ik]+' '
+                  # print(tmpsplit,"-",tmpline_cb.split())
+                  if tmpsplit[0]=='OUT':  # BLOCK OUT 문 처리 기 선언된 인서트 문 소환
+                     tmpline_cb=tmpline[:len(tmpline)-1]
+
+                  # if tmpsplit[0]=='JSR':
+                  #    print(tmpline_cb,tmpsplit)
+                     # print(tmpline_cb,tmpsplit)
+                     # if tmpsplit[1]=='A': bn_cnt=0
+                     #    # tmpline='INSERT BLOCK_LIST0'
+                     #    # tmpsplit=['INSERT','BLOCK_LIST0']
+                     # elif tmpsplit[1]=='B':  bn_cnt=1
+                     # elif tmpsplit[1]=='C':  bn_cnt=2
+                     # elif tmpsplit[1]=='D':  bn_cnt=3
+                     # elif tmpsplit[1]=='E':  bn_cnt=4
+                     # elif tmpsplit[1]=='F':  bn_cnt=5
+                     # elif tmpsplit[1]=='G':  bn_cnt=6
+                     # elif tmpsplit[1]=='H':  bn_cnt=7
+
+
+
+                  patline[linecnt]=tmpline_cb
+                  linecnt=linecnt+1
+                  # print(len(patline))
+                  patline.append([''])
+                  # if tmpline.find("YAD2ALL")>-1:
+                  #    print("^^ : ",tmpline,"-",tmpline_cb)
+
+               
+
+                              
+
+            if patt_register==1:  # 패턴 내 레지스터 기술 처리
+               # print(tmpline)
+               if tmpsplit[0].find("=")>1:
+                  tmpline_split=tmpsplit[0].split("=")
+                  # print(tmpline,tmpsplit[0],tmpline_split,len(tmpsplit),len(tmpline_split))
+                  tmpsplit[0]=tmpline_split[0]
+                  if (len(tmpsplit)==2):
+                     # print(tmpline,tmpsplit[0],tmpline_split)
+                     tmpsplit.append("")
+                  elif(len(tmpsplit)==1):
+                     tmpsplit.append("")
+                     tmpsplit.append("")
+                  tmpsplit[2]=tmpline_split[1]
+               elif(tmpsplit[1].find("=")==0 and len(tmpsplit[1])>1):
+                  # print(tmpline,tmpsplit[0],tmpline_split,len(tmpsplit),len(tmpline_split))
+                  if (len(tmpsplit)==2):
+                     tmpsplit.append("")
+                  # print(tmpsplit)
+                  
+                  tmpsplit[2]=tmpsplit[1][1:]
+               
+
+               if tmpsplit[0]=='D1': tmpsplit[0]='D1A_1'
+               if tmpsplit[0]=='D2': tmpsplit[0]='D2A_1' 
+               if tmpsplit[0]=='D1_2': tmpsplit[0]='D1A_2'
+               if tmpsplit[0]=='D2_2': tmpsplit[0]='D2A_2' 
+               if tmpsplit[0]=='D1_3': tmpsplit[0]='D1A_3'
+               if tmpsplit[0]=='D2_3': tmpsplit[0]='D2A_3' 
+               if tmpsplit[0]=='D1_4': tmpsplit[0]='D1A_4'
+               if tmpsplit[0]=='D2_4': tmpsplit[0]='D2A_4' 
+               if tmpsplit[0]=='D3B': tmpsplit[0]='D3B_1' 
+               if tmpsplit[0]=='D4B': tmpsplit[0]='D4B_1' 
+               if tmpsplit[0]=='D5': tmpsplit[0]='D5_1'
+               if tmpsplit[0]=='D6': tmpsplit[0]='D6_1' 
+               if tmpsplit[0]=='XH': tmpsplit[0]='XH_1'
+               if tmpsplit[0]=='YH': tmpsplit[0]='YH_1' 
+
+
+               if tmpsplit[0]=='TPH': tmpsplit[0]='TPH1A_1' 
+               if tmpsplit[0]=='TPH2': tmpsplit[0]='TPH2A_1' 
+               if tmpsplit[0]=='TPH_2': tmpsplit[0]='TPH1A_2' 
+               if tmpsplit[0]=='TPH1_2': tmpsplit[0]='TPH1A_2' 
+               if tmpsplit[0]=='TPH2_2': tmpsplit[0]='TPH2A_2' 
+               if tmpsplit[0]=='TPH_3': tmpsplit[0]='TPH1A_3' 
+               if tmpsplit[0]=='TPH1_3': tmpsplit[0]='TPH1A_3' 
+               if tmpsplit[0]=='TPH2_3': tmpsplit[0]='TPH2A_3' 
+               if tmpsplit[0]=='TPH_4': tmpsplit[0]='TPH1A_4' 
+               if tmpsplit[0]=='TPH1_4': tmpsplit[0]='TPH1A_4' 
+               if tmpsplit[0]=='TPH2_4': tmpsplit[0]='TPH2A_4' 
+               
+               # if (len(tmpsplit)>1):
+               #    print("---",tmpline,tmpsplit[0],tmpsplit,len(tmpsplit))#,len(tmpline_split))
+
+               if tmpsplit[0][0]=='D' and tmpsplit[0][:2]!='DR':  # 'D'로 시작하는 reg 들 처리
+                  for idr in range(len(dreg_name)):
+                     if dreg_name[idr]==tmpsplit[0]:
+                        if dreg_region[idr]==0:  # REGION 파일에서 선 설정된 게 없을 때 
+                           if tmpsplit[2][0]=='#':
+                              dreg_[idr]=int(tmpsplit[2][1:],16)
+                           else:
+                              dreg_[idr]=int(tmpsplit[2])
+                           # print(tmpline)
+               if tmpsplit[0][:2]=='TP':
+                  # if patn_iofmt=='#0000' or patn_iofmt=='#0' or patn_iofmt=='0':
+                  #    if tmpsplit[2][0]=='#':
+                  #       tpreg_val=int(tmpsplit[2][1:],16)
+                  #    elif tmpsplit[1][:2]=='=#':
+                  #       tpreg_val=int(tmpsplit[1][2:],16)
+                  #    else:
+                  #       if tmpsplit[0][:2]!='TI':
+                  #          print(tmpsplit)
+                  #          tpreg_val=int(tmpsplit[2])
+                  # else:
+                  # if patn_iofmt[0]=='#':
+                  #    tpreg_val=int(patn_iofmt[1:],16)
+                  if tmpsplit[2][0]=='#':
+                     tpreg_val=int(tmpsplit[2][1:],16)
+                  elif tmpsplit[2][:2]=='0x':
+                     tpreg_val=int(tmpsplit[2][2:],16)
+                  else:
+                     if tmpsplit[0][:2]!='TI':
+                        # print(tmpsplit,patn_iofmt)
+                        if patn_iofmt[0]=='#':
+                           tpreg_val=int(patn_iofmt[1:])   
+                        else:
+                           tpreg_val=int(patn_iofmt)
+                        # print(tmpsplit,patn_iofmt,tpreg_val)
+                        
+
+                  for itph in range(len(tpreg_name)):
+                     if tpreg_name[itph]==tmpsplit[0]:
+                        tpreg_[itph]=tpreg_val
+                        # print(tmpsplit)                           
+                        if tpreg_name[itph]=='TPH1A_1' or tpreg_name[itph]=='TPH2A_1':
+                           if (patn_iofmt[0]=='#' and patn_iofmt!='#0000'):tpreg_[itph]=int(patn_iofmt[1:],16)
+                           elif (patn_iofmt[:2]=='0x' and patn_iofmt!='0x0000'):tpreg_[itph]=int(patn_iofmt[2:],16)
+                              
+
+                        # if patn_iofmt!='#0000' or patn_iofmt!='#0' or patn_iofmt!='0': 
+              
+
+            if tmpsplit[0]=='START':
+               patt_start=1
+               patt_register=0
+               # print(dreg_)
+            if tmpsplit[0]=='REGISTER':
+               patt_register=1
+               # for isdef in range(sdef_idx):
+               #    print(isdef,header_sdef_alias[isdef],":",header_sdef_desc[isdef])
+      # if tmpline.find("YAD2ALL")>-1:
+      #    print(tmpline,patline[linecnt-1])
+
+   src.close()
+
+   #-----------------------------------------------------------------------------
+   #-----------------------------------------------------------------------------
+   #-----------------------------------------------------------------------------
+   #-----------------------------------------------------------------------------
+
+
+
+   # for i in range(sdef_idx):
+   #    tmpsplit=header_sdef_cbit[i].split()
+      # for ij in range(len(tmpsplit)):
+      #    if (tmpsplit[ij].find('<')>=-1):
+      #       if (tmpsplit[ij][0])=='X':
+      #          # print(tmpsplit[ij][:tmpsplit[ij].find('<')])
+      # if (header_sdef_alias[i].find("YAD"))>-1: print(i,header_sdef_alias[i],"=",header_sdef_cbit[i].split())
+
+   # for i in range(100):
+   #    print(i,header_sdef_alias[i],"=",header_sdef_cbit[i].split())
+
+   # for i in range(linecnt):
+   #    if patline[i].find("<B")>-1:
+   #       print(patline[i])
+
+
+   pcnt=0
+   lineway=[0]*linecnt
+   pccnt=[0]*linecnt
+   label=['-']*linecnt
+   labelcnt=0
+
+
+   #-----------------------------------------------------------------------------
+   #-----------------------------------------------------------------------------
+   #--- 1.1 라벨 정보 취득.
+   #-----------------------------------------------------------------------------
+   #-----------------------------------------------------------------------------
+
+   for i in range(linecnt):         #     loop / jump / call / insert 처리.. ==> 실제 수행되는 line 기술 ( loop는 1회 반영)
+      pattmp0=patline[i].split()
+      if pattmp0[0]!=':':
+         pcnt=pcnt+1
+         waycnt=0
+         if len(pattmp0[0])>0:
+            if pattmp0[0][len(pattmp0[0])-1]==':':
+               label[i]=pattmp0[0][:len(pattmp0[0])-1]  #   AAA: 일경우 AAA만 겟
+      waycnt=waycnt+1
+      pccnt[i]=pcnt
+      lineway[i]=waycnt
+      # print('%5d %5X %10s %2d '%(i,pccnt[i],label[i],lineway[i]),patline[i])
+      # if patline[i][:4]=='STPS':
+      #    break
+      if label[i]!='-':
+         label_name[labelcnt]= label[i]
+         label_pc[labelcnt]= pccnt[i]
+         label_idx[labelcnt]= i
+         labelcnt=labelcnt+1
+         # print(label_name,len(label_name))
+
+
+   # for i in range(labelcnt):
+      # print(label_name[i],label_idx[i],"%04X"%(label_pc[i]))
+
+   #---------------------------------------------------------------------
+   pi=0
+   jump_=0
+   call_=0
+   rtn_=0
+   call_addr=[0]*20
+   ret_addr=[0]*20
+   cr_sp=0
+
+   jump_addr=0
+
+   loop_cnt=[-1]*10
+   loop_addr=[0]*10
+
+
+   # call_addr=0
+   # ret_addr=0
+
+   cr_sp=0
+   pat_seq_cnt=0
+   # print(linecnt)
+
+   #-----------------------------------------------------------------------------
+   #-----------------------------------------------------------------------------
+   #--- 2. 루핑 반영 
+   #-----------------------------------------------------------------------------
+   #-----------------------------------------------------------------------------
+
+
+   for i in range(linecnt*200):
+      # print('%5d %5d %5X %10s %2d '%(i,pi,pccnt[pi],label[pi],lineway[pi]),patline[pi])
+      # if patline[pi].find("YC_2")>-1: print(patline[pi])
+      # patline_seq[pat_seq_cnt]=patline[pi]
+      patline_split=patline[pi].split()
+      patline_seq[pat_seq_cnt]=''
+      for isp in range(len(patline_split)):
+         patline_seq[pat_seq_cnt]=patline_seq[pat_seq_cnt]+str(patline_split[isp])+' '
+
+      pccnt_seq[pat_seq_cnt]=pccnt[pi]
+      icnt_seq[pat_seq_cnt]=pi
+      label_seq[pat_seq_cnt]=label[pi]
+      lineway_seq[pat_seq_cnt]=lineway[pi]
+
+      patline_seq.append([''])
+      pccnt_seq.append([0])
+      icnt_seq.append([0])
+      label_seq.append([''])
+      lineway_seq.append([0])
+      pat_seq_cnt=pat_seq_cnt+1
+
+      if patline[pi].find('STB')>-1:
+         print(pi,patline[pi],patline_split[0][2:],int(patline_split[1][1:],16))
+         for ib in range(len(breg_)):
+            if patline_split[0][2:]==breg_name[ib]:
+               breg_[ib]=int(patline_split[1][1:],16)
+
+
+      if patline[pi].find('STN')>-1:
+         # print(patline[pi],patline_split[0][2:],int(patline_split[1][1:],16))
+         for ib in range(len(nreg_)):
+            if patline_split[0][2:]==nreg_name[ib]:
+               nreg_[ib]=int(patline_split[1][1:],16)
+
+      # if patline[pi].find('OUT')>-1:
+      #    print(patline[pi])
+         # if tmpsplit[1]=='A': bn_cnt=0
+         #    # tmpline='INSERT BLOCK_LIST0'
+         #    # tmpsplit=['INSERT','BLOCK_LIST0']
+         # elif tmpsplit[1]=='B':  bn_cnt=1
+         # elif tmpsplit[1]=='C':  bn_cnt=2
+         # elif tmpsplit[1]=='D':  bn_cnt=3
+         # elif tmpsplit[1]=='E':  bn_cnt=4
+         # elif tmpsplit[1]=='F':  bn_cnt=5
+         # elif tmpsplit[1]=='G':  bn_cnt=6
+         # elif tmpsplit[1]=='H':  bn_cnt=7
+
+
+      if lineway[pi]==1 and patline[pi].find('JNC')>-1:
+         if patline_split[0][0:3]=='JNC':
+            j_sp_loc=0
+         elif patline_split[1][0:3]=='JNC':
+            j_sp_loc=1
+         elif patline_split[2][0:3]=='JNC':
+            j_sp_loc=2
+         else:
+            j_sp_loc=3
+         cflg_=int(patline_split[j_sp_loc][3:])
+         # print(ccflg,patline[pi].split()[0])
+         # print(cflg_,ccflg[16-cflg_],ccflg)
+         if ccflg[16-cflg_]=='1':
+            for ii in range(labelcnt):
+               if patline_split[j_sp_loc+1]==label_name[ii]:
+                  jump_addr=label_idx[ii]
+                  jump_=1
+            # print("jnc jump",jump_addr,patline[pi].split()[1])
+      elif lineway[pi]==1 and patline[pi][:15].find('JSR')>-1:            
+         if patline_split[0][0:3]=='JSR':
+            j_sp_loc=0
+         elif patline_split[1][0:3]=='JSR':
+            j_sp_loc=1
+         elif patline_split[2][0:3]=='JSR':
+            j_sp_loc=2
+         else:
+            j_sp_loc=3
+         # print("jsr","%d"%(cr_sp),patline[pi].split(),call_addr)
+         for ii in range(labelcnt):
+            if patline_split[j_sp_loc+1]==label_name[ii]:
+               call_addr[cr_sp]=label_idx[ii]
+               # print(call_addr,ret_addr)
+               ret_addr[cr_sp]=pi+16
+               call_=1
+         cr_sp=cr_sp+1  
+         # print(cr_sp,call_addr,ret_addr,patline[pi])
+         # print(label_name)
+         # print('%5d %5d %5X %10s %2d '%(i,pi,pccnt[pi],label[pi],lineway[pi]),patline[pi])
+      elif lineway[pi]==1 and patline[pi][:15].find('RTN')>-1:
+         rtn_=1
+      elif lineway[pi]==1 and patline[pi][:15].find('JMP')>-1:  
+         if patline_split[0][0:3]=='JMP':
+            j_sp_loc=0
+         elif patline_split[1][0:3]=='JMP':
+            j_sp_loc=1
+         elif patline_split[2][0:3]=='JMP':
+            j_sp_loc=2
+         else:
+            j_sp_loc=3
+         for ii in range(labelcnt):
+            if patline_split[j_sp_loc+1]==label_name[ii]:
+               jump_addr=label_idx[ii]
+               jump_=1
+      elif lineway[pi]==1 and patline[pi][:15].find('JNI')>-1:  
+         if patline_split[0][0:3]=='JNI':
+            j_sp_loc=0
+         elif patline_split[1][0:3]=='JNI':
+            j_sp_loc=1
+         elif patline_split[2][0:3]=='JNI':
+            j_sp_loc=2
+         else:
+            j_sp_loc=3
+
+         jninum_=int(patline_split[j_sp_loc][3:])
+         if loop_cnt[jninum_]<0:   # first  case
+            loop_cnt[jninum_]=1
+
+         if loop_cnt[jninum_]==0:  # loop complete case
+            loop_cnt[jninum_]=-1
+            jump_=0
+         else:                      # loop process
+            loop_cnt[jninum_]=loop_cnt[jninum_]-1
+            jump_=1
+            if patline_split[j_sp_loc+1][0]=='.':
+               if patline_split[j_sp_loc+1]=='.':
+                  jump_addr=pi
+               elif patline_split[j_sp_loc+1][1]=='-':
+                  jump_addr=pi-int(patline_split[j_sp_loc+1][2:])*16
+                  # print(jump_addr,pi,patline_split[j_sp_loc+1][2:])
+            else:
+               for ii in range(labelcnt):
+                  if patline_split[j_sp_loc+1]==label_name[ii]:
+                     jump_addr=label_idx[ii]
+               # jump_=1
